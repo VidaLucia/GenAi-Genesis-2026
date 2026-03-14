@@ -1,5 +1,6 @@
 venv
 __pycache__
 credit_card_transactions.csv
-engineered_transaction.csv
-data/*
+engineered_transactions.csv
+data/
+heatmap.png
