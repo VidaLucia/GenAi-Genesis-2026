@@ -82,7 +82,7 @@ def compute_final_decision(features: dict, model_scores: dict) -> dict:
 
     reasons = build_reasons(features)
     label = get_label(final_score)
-
+    #TODO: Add more heatmap information for a LLM to ingest alongisde input data
     return {
         "ml_score": round(ml_score, 4),
         "behavior_penalty": round(behavior_penalty, 4),
