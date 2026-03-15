@@ -3,7 +3,9 @@ from app.utils.geo import haversine_km
 
 
 def _get_hour_and_day(timestamp: str) -> tuple[int, int]:
-    dt = datetime.fromisoformat(timestamp)
+    # Accept common UTC format ending with "Z" (e.g., 2026-03-15T03:48:23.872Z).
+    normalized_timestamp = timestamp[:-1] + "+00:00" if timestamp.endswith("Z") else timestamp
+    dt = datetime.fromisoformat(normalized_timestamp)
     return dt.hour, dt.weekday()
 
 

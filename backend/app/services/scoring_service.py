@@ -2,6 +2,10 @@ def clamp(value: float, min_value: float = 0.0, max_value: float = 1.0) -> float
     return max(min_value, min(value, max_value))
 
 
+HIGH_RISK_THRESHOLD = 0.75
+MEDIUM_RISK_THRESHOLD = 0.30
+
+
 def compute_ml_score(model_scores: dict) -> float:
     return (
         0.2 * model_scores["naive_bayes"]
@@ -64,9 +68,9 @@ def build_reasons(features: dict) -> list[str]:
 
 
 def get_label(final_score: float) -> str:
-    if final_score >= 0.75:
+    if final_score >= HIGH_RISK_THRESHOLD:
         return "HIGH_RISK"
-    if final_score >= 0.45:
+    if final_score >= MEDIUM_RISK_THRESHOLD:
         return "MEDIUM_RISK"
     return "LOW_RISK"
 
