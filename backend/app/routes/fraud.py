@@ -8,7 +8,7 @@ from app.services.profile_service import load_user_profile
 from app.services.feature_service import build_features
 from app.services.model_service import predict_model_scores
 from app.services.scoring_service import compute_final_decision
-from app.services.log_service import save_analyst_log, list_analyst_logs, review_log_status
+from app.services.log_service import save_analyst_log, list_analyst_logs, review_log_status, list_user_transactions
 
 router = APIRouter(prefix="", tags=["fraud"])
 
@@ -53,6 +53,11 @@ def get_user_profile(user_id: str):
 @router.get("/analyst-logs")
 def get_logs():
     return {"logs": list_analyst_logs()}
+
+
+@router.get("/transactions/{user_id}")
+def get_user_transactions(user_id: str):
+    return {"transactions": list_user_transactions(user_id)}
 
 
 @router.post("/review-log/{log_id}")

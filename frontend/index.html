@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="SCOPE - Fraud Detection - Simulate card purchases and detect fraud in real-time with ML-powered analysis." />
+  <title>SCOPE - Fraud Detection Simulator</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- LEFT PANEL -->
+    <section class="panel-left">
+      <div class="panel-left-inner">
+        <header class="brand-header">
+          <div class="brand-logo">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="url(#logo-grad)" />
+              <path d="M10 22L16 10L22 22" stroke="white" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <circle cx="16" cy="14" r="2" fill="white" />
+              <defs>
+                <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+                  <stop stop-color="#2D82B7" />
+                  <stop offset="1" stop-color="#F3DFBF" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">SCOPE</h1>
+            <p class="brand-subtitle">Fraud Detection Simulator</p>
+          </div>
+        </header>
+
+        <form id="purchase-form" autocomplete="off">
+          <h2 class="form-section-title">Simulate a Purchase</h2>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="user-id">Account Holder</label>
+              <select id="user-id">
+                <option value="213112402583773">Alexander Rivers</option>
+                <option value="3545109339866548">Sophia Martinez</option>
+                <option value="36722699017270">Marcus Johnson</option>
+                <option value="4512828414983801773">Elena Vance</option>
+                <option value="571365235126">Julian Thorne</option>
+                <option value="6011109736646996">Beatrice Kim</option>
+                <option value="6011367958204270">Oliver Chen</option>
+                <option value="6534628260579800">Isabella Rossi</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="merchant-name">Merchant Name</label>
+              <input type="text" id="merchant-name" placeholder="e.g. Whole Foods" required />
+            </div>
+
+            <div class="form-group">
+              <label for="merchant-category">Merchant Category</label>
+              <select id="merchant-category">
+                <option value="grocery">Grocery</option>
+                <option value="gas_station">Gas Station</option>
+                <option value="restaurant">Restaurant</option>
+                <option value="online">Online Shopping</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="travel">Travel</option>
+                <option value="electronics">Electronics</option>
+                <option value="clothing">Clothing</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="amount">Amount ($)</label>
+              <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01" required />
+            </div>
+
+            <div class="form-group">
+              <label for="tx-lat">Transaction Lat</label>
+              <input type="number" id="tx-lat" step="any" placeholder="40.7128" required />
+            </div>
+
+            <div class="form-group">
+              <label for="tx-lng">Transaction Lng</label>
+              <input type="number" id="tx-lng" step="any" placeholder="-74.0060" required />
+            </div>
+
+            <div class="form-group">
+              <label for="phone-lat">Phone Lat <span class="hint">Set via iPhone Maps</span></label>
+              <input type="number" id="phone-lat" step="any" placeholder="Set on phone ->" readonly />
+            </div>
+
+            <div class="form-group">
+              <label for="phone-lng">Phone Lng <span class="hint">Set via iPhone Maps</span></label>
+              <input type="number" id="phone-lng" step="any" placeholder="Set on phone ->" readonly />
+            </div>
+          </div>
+
+          <input type="hidden" id="timestamp" />
+
+          <button type="submit" id="submit-btn" class="btn-submit">
+            <span class="btn-text">Submit Transaction</span>
+            <span class="btn-loader" hidden>
+              <span class="spinner"></span> Analyzing…
+            </span>
+          </button>
+        </form>
+
+        <!-- HEATMAP BUTTON -->
+        <button type="button" id="btn-view-heatmap" class="btn-heatmap">
+          View Purchase History Heatmap
+        </button>
+
+        <!-- RESULTS -->
+        <div id="results-card" class="results-card" hidden>
+          <h2 class="results-title">Analysis Results</h2>
+          <div class="risk-badge-container">
+            <span id="risk-badge" class="risk-badge"></span>
+          </div>
+          <div class="scores-grid">
+            <div class="score-item">
+              <span class="score-label">Fraud Probability</span>
+              <span id="fraud-prob" class="score-value"></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">ML Score</span>
+              <span id="ml-score" class="score-value"></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">Heatmap Score</span>
+              <span id="heatmap-score" class="score-value"></span>
+            </div>
+            <div class="score-item">
+              <span class="score-label">Final Score</span>
+              <span id="final-score" class="score-value"></span>
+            </div>
+          </div>
+          <div class="reasons-section">
+            <h3>Reasons</h3>
+            <ul id="reasons-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL — IPHONE SIMULATOR -->
+    <section class="panel-right">
+      <div class="iphone-frame">
+        <div class="iphone-bezel">
+          <!-- Dynamic Island -->
+          <div class="dynamic-island"></div>
+
+          <!-- Status Bar -->
+          <div class="status-bar">
+            <span class="status-time" id="status-time">9:41</span>
+            <div class="status-icons">
+              <svg class="status-icon" width="16" height="12" viewBox="0 0 16 12">
+                <rect x="0" y="8" width="3" height="4" rx="0.5" fill="white" />
+                <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="white" />
+                <rect x="9" y="2" width="3" height="10" rx="0.5" fill="white" />
+                <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="white" opacity="0.35" />
+              </svg>
+              <svg class="status-icon" width="16" height="12" viewBox="0 0 16 12">
+                <path
+                  d="M8 3C10.7 3 13.1 4.2 14.8 6.2L16 5C14 2.6 11.2 1 8 1C4.8 1 2 2.6 0 5L1.2 6.2C2.9 4.2 5.3 3 8 3Z"
+                  fill="white" />
+                <path
+                  d="M8 7C9.6 7 11 7.7 12 8.8L13.2 7.6C11.8 6.2 10 5.3 8 5.3C6 5.3 4.2 6.2 2.8 7.6L4 8.8C5 7.7 6.4 7 8 7Z"
+                  fill="white" />
+                <circle cx="8" cy="11" r="1.5" fill="white" />
+              </svg>
+              <div class="battery-icon">
+                <div class="battery-body">
+                  <div class="battery-fill"></div>
+                </div>
+                <div class="battery-tip"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen Content -->
+          <div class="iphone-screen">
+            <!-- HOME SCREEN -->
+            <div class="screen active" id="screen-home">
+              <div class="home-app-grid">
+                <button class="app-icon" data-screen="maps" id="app-maps">
+                  <div class="app-icon-img maps-icon">
+                    <svg viewBox="0 0 60 60" fill="none">
+                      <rect width="60" height="60" rx="13" fill="#34C759" />
+                      <path d="M15 18L25 14L35 18L45 14V42L35 46L25 42L15 46V18Z" fill="white" fill-opacity="0.9" />
+                      <path d="M25 14V42M35 18V46" stroke="#34C759" stroke-width="1.5" />
+                    </svg>
+                  </div>
+                  <span class="app-label">Maps</span>
+                </button>
+                <button class="app-icon" data-screen="messages" id="app-messages">
+                  <div class="app-icon-img messages-icon">
+                    <svg viewBox="0 0 60 60" fill="none">
+                      <rect width="60" height="60" rx="13" fill="#34C759" />
+                      <path
+                        d="M14 20C14 17.8 15.8 16 18 16H42C44.2 16 46 17.8 46 20V36C46 38.2 44.2 40 42 40H22L16 46V40H18C15.8 40 14 38.2 14 36V20Z"
+                        fill="white" />
+                    </svg>
+                  </div>
+                  <span class="app-label">Messages</span>
+                  <span class="notification-badge" id="msg-badge" hidden>1</span>
+                </button>
+                <button class="app-icon" data-screen="transactions" id="app-wallet">
+                  <div class="app-icon-img wallet-icon">
+                    <svg viewBox="0 0 60 60" fill="none">
+                      <rect width="60" height="60" rx="13" fill="#1C1C1E" />
+                      <rect x="12" y="18" width="36" height="8" rx="4" fill="#FF3B30" />
+                      <rect x="12" y="22" width="36" height="8" rx="4" fill="#FF9500" />
+                      <rect x="12" y="26" width="36" height="8" rx="4" fill="#FFCC00" />
+                      <rect x="12" y="30" width="36" height="8" rx="4" fill="#34C759" />
+                      <rect x="12" y="34" width="36" height="8" rx="4" fill="#007AFF" />
+                    </svg>
+                  </div>
+                  <span class="app-label">Wallet</span>
+                </button>
+                <button class="app-icon" data-screen="heatmap" id="app-heatmap">
+                  <div class="app-icon-img heatmap-icon">
+                    <svg viewBox="0 0 60 60" fill="none">
+                      <rect width="60" height="60" rx="13" fill="#5856D6" />
+                      <path
+                        d="M30 45C38.2843 45 45 38.2843 45 30C45 21.7157 38.2843 15 30 15C21.7157 15 15 21.7157 15 30C15 38.2843 21.7157 45 30 45Z"
+                        fill="white" fill-opacity="0.2" />
+                      <circle cx="30" cy="30" r="10" fill="white" fill-opacity="0.4" />
+                      <circle cx="30" cy="30" r="4" fill="white" />
+                    </svg>
+                  </div>
+                  <span class="app-label">Heatmap</span>
+                </button>
+                <button class="app-icon" data-screen="" id="app-settings" disabled>
+                  <div class="app-icon-img settings-icon">
+                    <svg viewBox="0 0 60 60" fill="none">
+                      <rect width="60" height="60" rx="13" fill="#8E8E93" />
+                      <circle cx="30" cy="30" r="10" stroke="white" stroke-width="3" fill="none" />
+                      <circle cx="30" cy="30" r="4" fill="white" />
+                    </svg>
+                  </div>
+                  <span class="app-label">Settings</span>
+                </button>
+              </div>
+              <div class="home-dock">
+                <button class="dock-icon" data-screen="maps">
+                  <svg viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="11" fill="#34C759" />
+                    <path d="M12 15L20 11L28 15L36 11V33L28 37L20 33L12 37V15Z" fill="white" fill-opacity="0.9" />
+                  </svg>
+                </button>
+                <button class="dock-icon" data-screen="messages">
+                  <svg viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="11" fill="#34C759" />
+                    <path
+                      d="M11 16C11 14.3 12.3 13 14 13H34C35.7 13 37 14.3 37 16V28C37 29.7 35.7 31 34 31H18L13 35V31H14C12.3 31 11 29.7 11 28V16Z"
+                      fill="white" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- MAPS SCREEN -->
+            <div class="screen" id="screen-maps">
+              <div class="screen-header">
+                <button class="back-btn" data-screen="home">< Back</button>
+                <span class="screen-title">Maps</span>
+                <span></span>
+              </div>
+              <div id="leaflet-map" class="map-container"></div>
+              <div class="map-controls">
+                <div class="map-coords" id="map-coords">Tap map to drop pin</div>
+                <button class="btn-set-location" id="btn-set-location" disabled>
+                  Set Phone Location
+                </button>
+              </div>
+            </div>
+
+            <!-- MESSAGES SCREEN -->
+            <div class="screen" id="screen-messages">
+              <div class="screen-header">
+                <button class="back-btn" data-screen="home">< Back</button>
+                <span class="screen-title">Messages</span>
+                <span></span>
+              </div>
+              <div class="messages-thread" id="messages-thread">
+                <div class="message-date">Today</div>
+                <div class="message incoming" id="welcome-msg">
+                  <div class="message-bubble">
+                    SCOPE Security is active. You'll receive 2FA alerts here for suspicious transactions.
+                  </div>
+                </div>
+              </div>
+              <div class="message-input-bar">
+                <input type="text" id="message-input" placeholder="Type YES or NO…" disabled />
+                <button id="message-send" class="btn-send" disabled>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 10L17 3L10 17L9 11L3 10Z" fill="white" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- HEATMAP SCREEN -->
+            <div class="screen" id="screen-heatmap">
+              <div class="screen-header">
+                <button class="back-btn" data-screen="home">< Back</button>
+                <span class="screen-title">Purchase Heatmap</span>
+                <span></span>
+              </div>
+              <div id="heatmap-map" class="map-container"></div>
+              <div class="heatmap-legend">
+                <div class="legend-item">
+                  <span class="legend-dot" style="background:rgba(99,102,241,0.35);border:2px solid #6366f1"></span>
+                  Frequent Zone
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background:#6366f1"></span>
+                  Zone Center
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background:#ff3b30"></span>
+                  Current Txn
+                </div>
+              </div>
+            </div>
+
+            <!-- TRANSACTIONS SCREEN -->
+            <div class="screen" id="screen-transactions">
+              <div class="screen-header">
+                <button class="back-btn" data-screen="home">< Back</button>
+                <span class="screen-title">Transactions</span>
+                <span></span>
+              </div>
+              <div class="transactions-list-container">
+                <div id="transactions-empty" class="transactions-empty">
+                  <p>No transactions yet</p>
+                </div>
+                <div id="transactions-list" class="transactions-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Home Indicator -->
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/heatmap.js/2.0.2/heatmap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/pa7/heatmap.js@master/plugins/leaflet-heatmap/leaflet-heatmap.js"></script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

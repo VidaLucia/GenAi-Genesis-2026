@@ -39,6 +39,11 @@ def list_analyst_logs() -> list[dict]:
     return logs
 
 
+def list_user_transactions(user_id: str) -> list[dict]:
+    logs = list_analyst_logs()
+    return [log for log in logs if str(log.get("transaction", {}).get("user_id")) == user_id]
+
+
 def review_log_status(log_id: str, review_status: str) -> bool:
     logs = list_analyst_logs()
     found = False
